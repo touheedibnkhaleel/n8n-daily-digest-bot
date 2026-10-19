@@ -1,0 +1,294 @@
+{
+  "name": "Daily Digest Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5ba5bfe1-d0d8-4ee3-9245-6cbcbdba1ec0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "34.01"
+            },
+            {
+              "name": "longitude",
+              "value": "71.58"
+            },
+            {
+              "name": "current",
+              "value": "temperature_2m,weather_code,wind_speed_10m"
+            },
+            {
+              "name": "daily",
+              "value": "temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+            },
+            {
+              "name": "timezone",
+              "value": "Asia/Karachi"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2144bb75-bed3-4b86-a2c8-71c4d99b21fa",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe83ec1c-4f40-4a59-a6d5-c23b8d6e9a3e",
+              "name": "weather",
+              "value": "=🌤 Weather today:{{ $json.current.temperature_2m }}°C now, high{{ $json.daily.temperature_2m_max[0] }}°C, low{{ $json.daily.temperature_2m_min[0] }}°C, rain chance{{ $json.daily.precipitation_probability_max[0] }}%",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5cd4709b-387b-47aa-b94c-b5176f1400eb",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "http://feeds.bbci.co.uk/news/rss.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "2a0b32e9-e97c-4bdb-b2bf-af3064494369",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "dbe03f74-92da-4011-a335-eb3edc72dc21",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "const titles = $input.all().map(item => item.json.title);\nreturn [{ json: { news: \"📰 Headlines:\\n\" + titles.map((t, i) => `${i + 1}. ${t}`).join(\"\\n\") } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "34dd936a-a193-4915-8719-85a08273e5fd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "abde7886-bd47-45fc-ab05-e0815b2c433f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "620a64c4-0d5d-48d8-9e77-dd01d6d5fa13",
+              "name": "message",
+              "value": "=Good morning! ☀️  {{ $json.weather }}  {{ $json.news }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "0950713c-4dcd-4d93-8136-ec74c57aeca7",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        0
+      ],
+      "id": "b287eee6-d2e4-4c40-b834-16990298289c",
+      "name": "Discord",
+      "webhookId": "1532863f-55db-459f-bdf5-a7f163964d0d",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "FApQ9eZP2f3D8EnV",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "RSS Read",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "49842dc6-1a3e-415f-bd54-b3a4d1ed4f6d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5d4a9859878989fa120becffb601e43b26bab7c3cec6216dbbc13c1237b8d2b7"
+  },
+  "id": "jJHartu0DqYkRTve",
+  "tags": []
+}
